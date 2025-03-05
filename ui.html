@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    
+    h2 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .section {
+      margin-bottom: 20px;
+    }
+    
+    .input-group {
+      margin-bottom: 12px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #e2e2e2;
+      box-sizing: border-box;
+      font-size: 12px;
+    }
+    
+    input[type="checkbox"] {
+      width: auto;
+      margin-right: 8px;
+    }
+    
+    input[type="color"] {
+      padding: 2px;
+      height: 30px;
+    }
+    
+    .color-picker {
+      display: flex;
+      align-items: center;
+    }
+    
+    .color-value {
+      margin-left: 10px;
+      flex-grow: 1;
+    }
+    
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      font-weight: normal;
+    }
+    
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    
+    button {
+      background-color: #18A0FB;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: #0D8EE0;
+    }
+    
+    button.secondary {
+      background-color: #F0F0F0;
+      color: #333;
+    }
+    
+    button.secondary:hover {
+      background-color: #E5E5E5;
+    }
+    
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .full-width {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h2>Asset Name Plugin Settings</h2>
+  
+  <div class="section">
+    <div class="input-group">
+      <label for="fontSize">Font Size</label>
+      <input type="number" id="fontSize" value="10" min="6" max="36">
+    </div>
+    
+    <div class="input-group">
+      <label for="fontFamily">Font Family</label>
+      <select id="fontFamily">
+        <option value="Inter">Inter</option>
+        <option value="Roboto">Roboto</option>
+        <option value="SF Pro">SF Pro</option>
+        <option value="Arial">Arial</option>
+        <option value="Helvetica">Helvetica</option>
+      </select>
+    </div>
+    
+    <div class="input-group">
+      <label for="fontColor">Font Color</label>
+      <div class="color-picker">
+        <input type="color" id="fontColor" value="#000000">
+        <input type="text" class="color-value" id="colorHex" value="#000000">
+      </div>
+    </div>
+    
+    <div class="input-group">
+      <label for="offset">Vertical Offset</label>
+      <input type="number" id="offset" value="10" min="0" max="100">
+    </div>
+    
+    <div class="input-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="applyToGroups" checked>
+        Apply to assets within groups
+      </label>
+    </div>
+    
+    <div class="input-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="autoLabel" checked>
+        Automatically label newly imported assets
+      </label>
+    </div>
+  </div>
+  
+  <div class="buttons">
+    <button class="secondary" id="cancelBtn">Cancel</button>
+    <button id="saveBtn">Save Settings</button>
+  </div>
+  
+  <div class="actions">
+    <button class="full-width" id="addToSelectedBtn">Add Names to Selected Assets</button>
+    <button class="full-width" id="addToAllBtn">Add Names to All Assets on Page</button>
+  </div>
+  
+  <script>
+    // Initialize UI with current settings
+    async function initializeUI() {
+      // For the demo, we'll use defaults
+      // In a real plugin, this would load from figma.clientStorage
+      const settings = {
+        fontSize: 10,
+        fontColor: { r: 0, g: 0, b: 0 },
+        fontFamily: "Inter",
+        offset: 10,
+        applyToGroups: true,
+        autoLabel: true
+      };
+      
+      document.getElementById('fontSize').value = settings.fontSize;
+      document.getElementById('fontFamily').value = settings.fontFamily;
+      document.getElementById('offset').value = settings.offset;
+      document.getElementById('applyToGroups').checked = settings.applyToGroups;
+      document.getElementById('autoLabel').checked = settings.autoLabel;
+      
+      // Convert RGB to hex for the color input
+      const color = settings.fontColor;
+      const hexColor = rgbToHex(color.r * 255, color.g * 255, color.b * 255);
+      document.getElementById('fontColor').value = hexColor;
+      document.getElementById('colorHex').value = hexColor;
+    }
+    
+    // Convert RGB to Hex
+    function rgbToHex(r, g, b) {
+      return "#" + ((1 << 24) + (Math.round(r) << 16) + (Math.round(g) << 8) + Math.round(b)).toString(16).slice(1);
+    }
+    
+    // Convert Hex to RGB
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16) / 255,
+        g: parseInt(result[2], 16) / 255,
+        b: parseInt(result[3], 16) / 255
+      } : { r: 0, g: 0, b: 0 };
+    }
+    
+    // Update colorHex when fontColor changes
+    document.getElementById('fontColor').addEventListener('input', function(e) {
+      document.getElementById('colorHex').value = e.target.value;
+    });
+    
+    // Update fontColor when colorHex changes
+    document.getElementById('colorHex').addEventListener('input', function(e) {
+      var hex = e.target.value;
+      if (/^#[0-9A-F]{6}$/i.test(hex)) {
+        document.getElementById('fontColor').value = hex;
+      }
+    });
+    
+    // Save settings
+    document.getElementById('saveBtn').addEventListener('click', function() {
+      var settings = {
+        fontSize: parseInt(document.getElementById('fontSize').value),
+        fontFamily: document.getElementById('fontFamily').value,
+        fontColor: hexToRgb(document.getElementById('fontColor').value),
+        offset: parseInt(document.getElementById('offset').value),
+        applyToGroups: document.getElementById('applyToGroups').checked,
+        autoLabel: document.getElementById('autoLabel').checked
+      };
+      
+      parent.postMessage({ 
+        pluginMessage: { 
+          type: 'saveSettings', 
+          settings: settings 
+        } 
+      }, '*');
+    });
+    
+    // Cancel button
+    document.getElementById('cancelBtn').addEventListener('click', function() {
+      parent.postMessage({ 
+        pluginMessage: { 
+          type: 'cancel' 
+        } 
+      }, '*');
+    });
+    
+    // Add Names to Selected Assets
+    document.getElementById('addToSelectedBtn').addEventListener('click', function() {
+      parent.postMessage({ 
+        pluginMessage: { 
+          type: 'runCommand', 
+          command: 'addNamesToSelected' 
+        } 
+      }, '*');
+    });
+    
+    // Add Names to All Assets
+    document.getElementById('addToAllBtn').addEventListener('click', function() {
+      parent.postMessage({ 
+        pluginMessage: { 
+          type: 'runCommand', 
+          command: 'addNamesToAll' 
+        } 
+      }, '*');
+    });
+    
+    // Initialize UI when the page loads
+    document.addEventListener('DOMContentLoaded', initializeUI);
+  </script>
+</body>
+</html>
